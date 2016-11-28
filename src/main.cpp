@@ -24,6 +24,22 @@ std::vector< std::pair< unsigned int, unsigned int > > getMask(const CImg<>& inp
  */
 void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >& mask, CImg<>& input);
 
+/**
+ * @brief Définit si l'énergie est minimale ou non. Définit l'arrêt du programme.
+ * @return True si l'énergie est minimale, sinon false.
+ */
+bool isEmin();
+
+/**
+ * @brief Utilise la méthode déterministe pour remplacer les pixels du masque.
+ * @param input Image donnée en entrée.
+ * @param mask Masque présent sur l'image.
+ * @return Image recomposée.
+ */
+CImg<> methodDeter(const CImg<float> input, const std::vector < std::pair < unsigned int , unsigned int > > mask);
+
+
+/// MAIN ///
 int main(int argc, char** argv)
 {
     CImg<float> input("images/lenaGrayHidden.bmp");
@@ -39,16 +55,20 @@ int main(int argc, char** argv)
     randomInitMask(mask, finalImage);
 	
     // Algo
-    // ...
+    while(isEmin())
+    {
+        methodDeter(input, mask);
+    }
 
     CImgDisplay displayFinalImage(finalImage, "Image resultat");
     while (!displayInput.is_closed() || !displayFinalImage.is_closed())
-	{
+    {
         displayInput.wait();
-	}
-	
+    }
+
     return EXIT_SUCCESS;
 }
+
 
 std::vector< std::pair< unsigned int, unsigned int > > getMask(const CImg<>& input)
 {
@@ -78,4 +98,20 @@ void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >
         input(pixel.first, pixel.second, 1) = input(x, y, 1);
         input(pixel.first, pixel.second, 2) = input(x, y, 2);
     }
+}
+
+bool isEmin()
+{
+	// TODO : A implémenter
+
+    return false;
+}
+
+CImg<> methodDeter(const CImg<float> input, const std::vector < std::pair < unsigned int , unsigned int > > mask)
+{
+	CImg<float> output(input);
+
+    // TODO
+
+    return output;
 }
