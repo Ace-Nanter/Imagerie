@@ -7,6 +7,7 @@
 
 using namespace cimg_library;
 
+
 /**
  * @brief Récupère l'ensemble des coordonnées des pixels faisant l'objet d'une reconstitution.
  * @param input Image d'entrée.
@@ -14,16 +15,36 @@ using namespace cimg_library;
  */
 std::vector< std::pair< unsigned int, unsigned int > > getMask(const CImg<>& input);
 
-int main(int argc, char** argv)
+/**
+ * @brief Définit si l'énergie est minimale ou non. Définit l'arrêt du programme. 
+ * @return True si l'énergie est minimale, sinon false.
+ */
+const bool isEmin();
+
+/**
+ * @brief Utilise la méthode déterministe pour remplacer les pixels du masque.
+ * @param input Image donnée en entrée.
+ * @param mask Masque présent sur l'image.
+ * @return Image recomposée.
+ */
+const CImg<> methodDeter(const CImg<float> input, const std::vector < std::pair < unsigned int , unsigned int > > mask);
+
+int main(int argc, char ** argv)
 {
-    CImg<float> input("images/lenaGrayHidden.bmp");
-    CImgDisplay displayInput(input, "Image d'origine");
+	// Variables
+	std::vector < std::pair < unsigned int , unsigned int > > mask;
+	CImg<float> input("images/lenaGrayHidden.bmp");
 
-    std::vector< std::pair< unsigned int, unsigned int > > mask = getMask(input);
-
-    std::cout << "Nombre de pixel à reconstituer : " << mask.size() << std::endl;
+	// Affichage
+	CImgDisplay displayInput(input, "Image d'origine");
 	
-    while (!displayInput.is_closed())
+	mask = getMask(input);
+
+	while(isEmin()) {
+		methodDeter(input, mask);
+	}
+
+	while (!displayInput.is_closed())
 	{
         displayInput.wait();
 	}
@@ -44,4 +65,15 @@ std::vector< std::pair< unsigned int, unsigned int > > getMask(const CImg<>& inp
     }
 
     return mask;
+}
+
+const bool isEmin() {
+	// TODO : A implémenter
+	return true;
+}
+
+const CImg<> methodDeter(const CImg<float> input, const std::vector < std::pair < unsigned int , unsigned int > > mask) {
+	CImg<float> output(input);
+
+	return output;
 }
