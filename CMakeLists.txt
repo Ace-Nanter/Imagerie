@@ -1,7 +1,10 @@
 # Project #-----------------------------------------------------------------------------------------
-project ( Imagerie )
+project ( imagerie )
 
 cmake_minimum_required ( VERSION 2.8.9 )
+
+find_package(X11 REQUIRED)
+find_package(Threads REQUIRED)
 
 # C++ Warning Level #-------------------------------------------------------------------------------
 if ( CMAKE_COMPILER_IS_GNUCXX )
@@ -25,22 +28,21 @@ endif ()
 message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 
 # Sources #-----------------------------------------------------------------------------------------
-set ( HEADERS
-      src/CImg.h
+set ( 	HEADERS
     )
 
 set ( SOURCES
     )
 
-include_directories ( src/ )
+include_directories (src/ lib/)
 
 # Executables #-------------------------------------------------------------------------------------
-add_executable ( ${CMAKE_PROJECT_NAME}_exe
+add_executable ( ${CMAKE_PROJECT_NAME}
                  src/main.cpp
                  ${HEADERS}
                  ${SOURCES}
                )
 
 # Build #-------------------------------------------------------------------------------------------
-set_target_properties ( ${CMAKE_PROJECT_NAME}_exe PROPERTIES LINKER_LANGUAGE C )
-target_link_libraries ( ${CMAKE_PROJECT_NAME}_exe ${CMAKE_THREAD_LIBS_INIT} )
+set_target_properties ( ${CMAKE_PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C )
+target_link_libraries ( ${CMAKE_PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} ${X11_LIBRARIES})
