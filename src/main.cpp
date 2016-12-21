@@ -33,15 +33,22 @@ void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >
 /**
  * @brief Utilise la méthode déterministe pour remplacer les pixels du masque.
  * @param mask Masque présent sur l'image.
- * @param input Image à traiter.
+ * @param image Image à traiter.
  */
-void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned int > >& mask, CImg<>& input);
+void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned int > >& mask,
+                         const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
+                         CImg<>& image);
 
+
+// Number of iterations
+unsigned int nbIterations;
 
 /// MAIN ///
 int main(int argc, char** argv)
 {
-    CImg<float> input("images/lenaGrayHiddenSmall.bmp");
+    nbIterations = cimg_option("-n", 5, "Number of iterations");
+
+    CImg<float> input = CImg<float>("images/lenaGrayHiddenSmall.bmp").channel(0);
     CImgDisplay displayInput(input, "Image d'origine");
 
     // Pixels qui font objet du traitement
@@ -57,7 +64,7 @@ int main(int argc, char** argv)
     randomInitMask(mask, outMask, finalImage);
 	
     // Algo
-    deterministicMethod(mask, input);
+    deterministicMethod(mask, outMask, finalImage);
 
     CImgDisplay displayFinalImage(finalImage, "Image resultat");
     while (!displayInput.is_closed() || !displayFinalImage.is_closed())
@@ -76,8 +83,8 @@ void getMask(const CImg<>& input,
     // Ajoute tous les pixels de l'image qui doivent être reconstitués
     cimg_forXY(input, x, y)
     {
-        // Pixels rouges
-        if (input(x, y, 0) == 255 && input(x, y, 1) == 255 && input(x, y, 2) == 255)
+        // Pixels blanc pure
+        if (input(x, y/*, 0*/) == 255 /*&& input(x, y, 1) == 255 && input(x, y, 2) == 255*/)
             mask.push_back({x, y});
         else
             outMask.push_back({x, y});
@@ -96,54 +103,68 @@ void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >
         const auto& seedPixel = outMask[index];
 
         // Initialise la couleur du pixel avec un pixel aléatoire de l'image
-        input(pixel.first, pixel.second, 0) = input(seedPixel.first, seedPixel.second, 0);
-        input(pixel.first, pixel.second, 1) = input(seedPixel.first, seedPixel.second, 1);
-        input(pixel.first, pixel.second, 2) = input(seedPixel.first, seedPixel.second, 2);
+        input(pixel.first, pixel.second/*, 0*/) = input(seedPixel.first, seedPixel.second/*, 0*/);
+        /*input(pixel.first, pixel.second, 1) = input(seedPixel.first, seedPixel.second, 1);
+        input(pixel.first, pixel.second, 2) = input(seedPixel.first, seedPixel.second, 2);*/
     }
 }
 
-#include <algorithm>
-void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned int > >& mask, CImg<>& input)
+void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned int > >& mask,
+                         const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
+                         CImg<>& image)
 {
-    // TODO check the minimization of E(F)
+    double lastEnergy = std::numeric_limits<double>::max();
 
-    for (const auto& pixel : mask)
+    for (unsigned int i = 0 ; i < nbIterations ; ++i)
     {
-        std::pair<unsigned int, unsigned int> bestMatch(0, 0);
-        double lowestDist = std::numeric_limits<double>::max();
-        CImg_3x3(I, float);
+        double energy = 0;
 
-        cimg_for3x3(input, x, y, 0, 0, I, float)
+        for (const auto& pixel : mask)
         {
-            /// BAD => O(N)
-            auto pair = std::pair<unsigned int, unsigned int>(x, y);
-            auto it = std::find(mask.cbegin(), mask.cend(), pair);
-            if (it == mask.cend()) continue;
-            ///
+            std::pair<unsigned int, unsigned int> bestMatch(0, 0);
+            double lowestDist = std::numeric_limits<double>::max();
+            CImg_3x3(I, float);
 
-            const double diffIpp = input(pixel.first - 1, pixel.second - 1) - Ipp;
-            const double diffIcp = input(pixel.first    , pixel.second - 1) - Icp;
-            const double diffInp = input(pixel.first + 1, pixel.second - 1) - Inp;
-
-            const double diffIpc = input(pixel.first - 1, pixel.second) - Ipc;
-            //const double diffIcc = input(pixel.first    , pixel.second) - Icc;
-            const double diffInc = input(pixel.first + 1, pixel.second) - Inc;
-
-            const double diffIpn = input(pixel.first - 1, pixel.second + 1) - Ipn;
-            const double diffIcn = input(pixel.first    , pixel.second + 1) - Icn;
-            const double diffInn = input(pixel.first + 1, pixel.second + 1) - Inn;
-
-            double neighborhoodDist = diffIpp*diffIpp + diffIcp*diffIcp + diffInp*diffInp
-                                    + diffIpc*diffIpc /*+ diffIcc*diffIcc*/ + diffInc*diffInc
-                                    + diffIpn*diffIpn + diffIcn*diffIcn + diffInn*diffInn;
-
-            if (neighborhoodDist < lowestDist)
+            unsigned int i = 0;
+            cimg_for3x3(image, x, y, 0, 0, I, float)
             {
-                lowestDist = neighborhoodDist;
-                bestMatch = { x, y };
+                auto seedPixelCoord = std::pair<unsigned int, unsigned int>(x, y);
+                // Pixel is outside mask => skip it
+                if (outMask[i] != seedPixelCoord) continue; else ++i;
+
+                // Treatments
+                const double diffIpp = image(pixel.first - 1, pixel.second - 1) - Ipp;
+                const double diffIcp = image(pixel.first    , pixel.second - 1) - Icp;
+                const double diffInp = image(pixel.first + 1, pixel.second - 1) - Inp;
+
+                const double diffIpc = image(pixel.first - 1, pixel.second) - Ipc;
+                //const double diffIcc = image(pixel.first    , pixel.second) - Icc;    // Current pixel not in neighbohood
+                const double diffInc = image(pixel.first + 1, pixel.second) - Inc;
+
+                const double diffIpn = image(pixel.first - 1, pixel.second + 1) - Ipn;
+                const double diffIcn = image(pixel.first    , pixel.second + 1) - Icn;
+                const double diffInn = image(pixel.first + 1, pixel.second + 1) - Inn;
+
+                double neighborhoodDist = diffIpp*diffIpp + diffIcp*diffIcp + diffInp*diffInp
+                                        + diffIpc*diffIpc /*+ diffIcc*diffIcc*/ + diffInc*diffInc
+                                        + diffIpn*diffIpn + diffIcn*diffIcn + diffInn*diffInn;
+
+                if (neighborhoodDist < lowestDist)
+                {
+                    lowestDist = neighborhoodDist;
+                    bestMatch = { x, y };
+                }
             }
+
+            energy += lowestDist;
+
+            image(pixel.first, pixel.second) = image(bestMatch.first, bestMatch.second);
         }
 
-        input(pixel.first, pixel.second) = input(bestMatch.first, bestMatch.second);
+        // Itération results
+        double ratio = (lastEnergy - energy) / double(lastEnergy);
+        ratio = ratio > 0 ? ratio : -ratio;
+
+        lastEnergy = energy;
     }
 }
