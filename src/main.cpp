@@ -109,44 +109,41 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
 
     for (const auto& pixel : mask)
     {
-        cimg_forC(input, c)
+        std::pair<unsigned int, unsigned int> bestMatch(0, 0);
+        double lowestDist = std::numeric_limits<double>::max();
+        CImg_3x3(I, float);
+
+        cimg_for3x3(input, x, y, 0, 0, I, float)
         {
-            std::pair<unsigned int, unsigned int> bestMatch(0, 0);
-            double lowestDist = std::numeric_limits<double>::max();
-            CImg_3x3(I, float);
+            /// BAD => O(N)
+            auto pair = std::pair<unsigned int, unsigned int>(x, y);
+            auto it = std::find(mask.cbegin(), mask.cend(), pair);
+            if (it == mask.cend()) continue;
+            ///
 
-            cimg_for3x3(input, x, y, 0, c, I, float)
+            const double diffIpp = input(pixel.first - 1, pixel.second - 1) - Ipp;
+            const double diffIcp = input(pixel.first    , pixel.second - 1) - Icp;
+            const double diffInp = input(pixel.first + 1, pixel.second - 1) - Inp;
+
+            const double diffIpc = input(pixel.first - 1, pixel.second) - Ipc;
+            //const double diffIcc = input(pixel.first    , pixel.second) - Icc;
+            const double diffInc = input(pixel.first + 1, pixel.second) - Inc;
+
+            const double diffIpn = input(pixel.first - 1, pixel.second + 1) - Ipn;
+            const double diffIcn = input(pixel.first    , pixel.second + 1) - Icn;
+            const double diffInn = input(pixel.first + 1, pixel.second + 1) - Inn;
+
+            double neighborhoodDist = diffIpp*diffIpp + diffIcp*diffIcp + diffInp*diffInp
+                                    + diffIpc*diffIpc /*+ diffIcc*diffIcc*/ + diffInc*diffInc
+                                    + diffIpn*diffIpn + diffIcn*diffIcn + diffInn*diffInn;
+
+            if (neighborhoodDist < lowestDist)
             {
-                /// BAD => O(N)
-                auto pair = std::pair<unsigned int, unsigned int>(x, y);
-                auto it = std::find(mask.cbegin(), mask.cend(), pair);
-                if (it == mask.cend()) continue;
-                ///
-
-                const double diffIpp = input(pixel.first - 1, pixel.second - 1, c) - Ipp;
-                const double diffIcp = input(pixel.first    , pixel.second - 1, c) - Icp;
-                const double diffInp = input(pixel.first + 1, pixel.second - 1, c) - Inp;
-
-                const double diffIpc = input(pixel.first - 1, pixel.second, c) - Ipc;
-                //const double diffIcc = input(pixel.first    , pixel.second, c) - Icc;
-                const double diffInc = input(pixel.first + 1, pixel.second, c) - Inc;
-
-                const double diffIpn = input(pixel.first - 1, pixel.second + 1, c) - Ipn;
-                const double diffIcn = input(pixel.first    , pixel.second + 1, c) - Icn;
-                const double diffInn = input(pixel.first + 1, pixel.second + 1, c) - Inn;
-
-                double neighborhoodDist = diffIpp*diffIpp + diffIcp*diffIcp + diffInp*diffInp
-                                        + diffIpc*diffIpc /*+ diffIcc*diffIcc*/ + diffInc*diffInc
-                                        + diffIpn*diffIpn + diffIcn*diffIcn + diffInn*diffInn;
-
-                if (neighborhoodDist < lowestDist)
-                {
-                    lowestDist = neighborhoodDist;
-                    bestMatch = { x, y };
-                }
+                lowestDist = neighborhoodDist;
+                bestMatch = { x, y };
             }
-
-            input(pixel.first, pixel.second,c) = input(bestMatch.first, bestMatch.second, c);
         }
+
+        input(pixel.first, pixel.second) = input(bestMatch.first, bestMatch.second);
     }
 }
