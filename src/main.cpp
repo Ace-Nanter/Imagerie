@@ -10,32 +10,33 @@
 
 using namespace cimg_library;
 
-std::mt19937 mt(123456789); ///< Générateur aléatoire
+std::mt19937 mt(123456789); ///< Random generator.
 
 /**
- * @brief Récupère l'ensemble des coordonnées des pixels faisant l'objet d'une reconstitution.
- * @param input Image d'entrée.
- * @param mask Liste des coordonnées de l'image correspondant au mask.
- * @param outMask Liste des coordonnées de l'image correspondant à l'extérieur du mask.
+ * @brief Recover all pixels coordinates that need reconstruction.
+ * @param input Input image.
+ * @param mask List of pixel coordinates corresponding to the mask.
+ * @param outMask List of pixel coordinates out of the mask.
  */
 void getMask(const CImg<>& input,
              std::vector< std::pair< unsigned int, unsigned int > >& mask,
              std::vector< std::pair< unsigned int, unsigned int > >& outMask);
 
 /**
- * @brief Initilialise les pixels du faisant partis du mask à une valeur aléatoire tirée depuis l'image d'entrée.
- * @param mask Vecteur des pixels du mask.
- * @param outMask Vecteur des pixels en dehors du mask.
- * @param input Image d'entrée.
+ * @brief Initialize all pixel from mask to a random value from input image.
+ * @param mask List of pixel coordinates corresponding to the mask.
+ * @param outMask List of pixel coordinates out of the mask.
+ * @param input Input image.
  */
 void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >& mask,
                     const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
                     CImg<>& input);
 
 /**
- * @brief Utilise la méthode déterministe pour remplacer les pixels du masque.
- * @param mask Masque présent sur l'image.
- * @param image Image à traiter.
+ * @brief Use the deterministic method to emplace mask pixels.
+ * @param mask List of pixel coordinates corresponding to the mask.
+ * @param outMask List of pixel coordinates out of the mask.
+ * @param image Image that will be modified.
  */
 void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned int > >& mask,
                          const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
@@ -45,9 +46,6 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
 bool verbose;
 bool fileStats;
 
-// Save result
-bool saveResult;
-
 // Number of iterations
 unsigned int nbIterations;
 
@@ -56,31 +54,33 @@ int main(int argc, char** argv)
 {
     verbose = cimg_option("-v", true, "Verbose mode");
     fileStats = cimg_option("-f", false, "Write stats to file");
-    saveResult = cimg_option("-s", false, "Save result");
+    bool saveResult = cimg_option("-s", false, "Save result to file");
+    const char* outputFile = cimg_option("-sf", "output.bmp", "Output file name");
     nbIterations = cimg_option("-n", 5, "Number of iterations");
 
     CImg<float> input = CImg<float>("images/lenaGrayHiddenSmall.bmp").channel(0);
-    CImgDisplay displayInput(input, "Image d'origine");
+    CImgDisplay displayInput(input, "Input Image");
 
-    // Pixels qui font objet du traitement
+    // Pixels that need treatment
     std::vector< std::pair< unsigned int, unsigned int > > mask;
-    // Autres pixels
+    // Other pixels
     std::vector< std::pair< unsigned int, unsigned int > > outMask;
     getMask(input, mask, outMask);
 
-    std::cout << "Nombre de pixel à reconstituer : " << mask.size() << std::endl;
+    std::cout << "Number of pixel to reconstitute: " << mask.size() << std::endl;
 
-    // Initialisation random
+    // Random initialization
     CImg<float> finalImage(input);
     randomInitMask(mask, outMask, finalImage);
 	
     // Algo
     deterministicMethod(mask, outMask, finalImage);
 
+    // Results
     if (saveResult)
-        finalImage.save("output.bmp");
+        finalImage.save(outputFile);
 
-    CImgDisplay displayFinalImage(finalImage, "Image resultat");
+    CImgDisplay displayFinalImage(finalImage, "Result Image");
     while (!displayInput.is_closed() || !displayFinalImage.is_closed())
     {
         displayInput.wait();
@@ -94,10 +94,10 @@ void getMask(const CImg<>& input,
              std::vector< std::pair< unsigned int, unsigned int > >& mask,
              std::vector< std::pair< unsigned int, unsigned int > >& outMask)
 {
-    // Ajoute tous les pixels de l'image qui doivent être reconstitués
+    // Add every pixels in the image that should be reconstructed
     cimg_forXY(input, x, y)
     {
-        // Pixels blanc pure
+        // Blank pixels
         if (input(x, y/*, 0*/) == 255 /*&& input(x, y, 1) == 255 && input(x, y, 2) == 255*/)
             mask.push_back({x, y});
         else
@@ -110,13 +110,14 @@ void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >
                     CImg<>& input)
 {
     const unsigned int nbPixels = outMask.size();
-    // Pour chaque pixel du masque
+
+    // For each pixel of the mask
     for (const auto& pixel : mask)
     {
         unsigned int index = mt() % (nbPixels);
         const auto& seedPixel = outMask[index];
 
-        // Initialise la couleur du pixel avec un pixel aléatoire de l'image
+        // Initialize the color of the pixel to a random pixel color in the seed image
         input(pixel.first, pixel.second/*, 0*/) = input(seedPixel.first, seedPixel.second/*, 0*/);
         /*input(pixel.first, pixel.second, 1) = input(seedPixel.first, seedPixel.second, 1);
         input(pixel.first, pixel.second, 2) = input(seedPixel.first, seedPixel.second, 2);*/
@@ -163,6 +164,7 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
                                         + diffIpc*diffIpc /*+ diffIcc*diffIcc*/ + diffInc*diffInc
                                         + diffIpn*diffIpn + diffIcn*diffIcn + diffInn*diffInn;
 
+                // If best neighorhood
                 if (neighborhoodDist < lowestDist)
                 {
                     lowestDist = neighborhoodDist;
@@ -172,14 +174,15 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
 
             energy += lowestDist;
 
+            // Set new pixel color
             image(pixel.first, pixel.second) = image(bestMatch.first, bestMatch.second);
         }
 
-        // Itération results
+        // Iteration results
         double ratio = (lastEnergy - energy) / double(lastEnergy);
         ratio = ratio > 0 ? ratio : -ratio;
 
-        // Write to file
+        // Stats and verbose
         if (verbose)
         {
             if (fileStats)
@@ -191,7 +194,7 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
                 ofs.close();
             }
 
-            std::cout << "Last Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n" << std::endl;
+            std::cout << "Loop : " << i << "\nLast Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n" << std::endl;
         }
 
         lastEnergy = energy;
