@@ -77,7 +77,7 @@ void getMask(const CImg<>& input,
     cimg_forXY(input, x, y)
     {
         // Pixels rouges
-        if (input(x, y, 0) == 255 && input(x, y, 1) == 0 && input(x, y, 2) == 0)
+        if (input(x, y, 0) == 255 && input(x, y, 1) == 255 && input(x, y, 2) == 255)
             mask.push_back({x, y});
         else
             outMask.push_back({x, y});
