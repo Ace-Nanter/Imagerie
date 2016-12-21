@@ -1,7 +1,9 @@
 #include <cstdlib>
 
+#include <fstream>
 #include <iostream>
 #include <random>
+#include <sstream>
 #include <vector>
 
 #include "CImg.h"
@@ -39,6 +41,12 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
                          const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
                          CImg<>& image);
 
+// Verbose mode
+bool verbose;
+bool fileStats;
+
+// Save result
+bool saveResult;
 
 // Number of iterations
 unsigned int nbIterations;
@@ -46,6 +54,9 @@ unsigned int nbIterations;
 /// MAIN ///
 int main(int argc, char** argv)
 {
+    verbose = cimg_option("-v", true, "Verbose mode");
+    fileStats = cimg_option("-f", false, "Write stats to file");
+    saveResult = cimg_option("-s", false, "Save result");
     nbIterations = cimg_option("-n", 5, "Number of iterations");
 
     CImg<float> input = CImg<float>("images/lenaGrayHiddenSmall.bmp").channel(0);
@@ -65,6 +76,9 @@ int main(int argc, char** argv)
 	
     // Algo
     deterministicMethod(mask, outMask, finalImage);
+
+    if (saveResult)
+        finalImage.save("output.bmp");
 
     CImgDisplay displayFinalImage(finalImage, "Image resultat");
     while (!displayInput.is_closed() || !displayFinalImage.is_closed())
@@ -164,6 +178,21 @@ void deterministicMethod(const std::vector< std::pair< unsigned int, unsigned in
         // Itération results
         double ratio = (lastEnergy - energy) / double(lastEnergy);
         ratio = ratio > 0 ? ratio : -ratio;
+
+        // Write to file
+        if (verbose)
+        {
+            if (fileStats)
+            {
+                std::stringstream ss;
+                ss << "./loop" << i;
+                std::ofstream ofs(ss.str(), std::ios::trunc | std::ios::out);
+                ofs << "Last Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n\n";
+                ofs.close();
+            }
+
+            std::cout << "Last Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n" << std::endl;
+        }
 
         lastEnergy = energy;
     }
