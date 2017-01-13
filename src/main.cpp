@@ -50,6 +50,14 @@ void getMask(const CImg<>& input,
              std::map< std::pair< unsigned int, unsigned int > , std::pair< unsigned int, unsigned int > >& mask,
              std::vector< std::pair< unsigned int, unsigned int > >& outMask);
 
+/**
+ * @brief getImage Recompse the image taking count of which pixels has been replaced
+ * @param mask Map associating pixel to replace with replacing pixels.
+ * @param image Image that will be modified.
+ */
+void getImage(const std::map< std::pair< unsigned int, unsigned int > , std::pair< unsigned int, unsigned int > >& mask,
+                CImg<>& image);
+
 // Verbose mode
 bool verbose;
 bool fileStats;
@@ -80,9 +88,10 @@ int main(int argc, char** argv)
     // Random initialization
     CImg<float> finalImage(input);
     randomInitMask(mask, outMask);
-	
+    getImage(mask, finalImage);
+
     // Algo
-    probabilisticMethod(mask, outMask, finalImage);
+    //probabilisticMethod(mask, outMask, finalImage);
 
     // Results
     if (saveResult)
@@ -143,5 +152,111 @@ void probabilisticMethod(std::map< std::pair< unsigned int, unsigned int > , std
                          const std::vector< std::pair< unsigned int, unsigned int > >& outMask,
                          CImg<>& image)
 {
-    
+
+    // TODO : penser à prendre l'exponentielle. Trouver la partie du code qui fait seg fault.
+    // TODO : penser que la comparaison se fait sur des probabilités : il faut prendre la probabilité la plus haute et non pas la plus basse
+    double lastEnergy = std::numeric_limits<double>::max();
+
+    for (unsigned int i = 0 ; i < nbIterations ; ++i)
+    {
+        double energy = 0;
+
+        for (auto& pixel : mask)
+        {
+            double lowestDist = std::numeric_limits<double>::max();
+            CImg_3x3(I, float);
+
+            unsigned int i = 0;
+            cimg_for3x3(image, x, y, 0, 0, I, float)
+            {
+                auto seedPixelCoord = std::pair<unsigned int, unsigned int>(x, y);
+                // Pixel is outside mask => skip it
+                if (outMask[i] != seedPixelCoord) continue; else ++i;
+
+                // Treatments
+                std::pair< unsigned int, unsigned int > coords;
+
+                // Ipp
+                const double diffIpp1 = image(pixel.first.first - 1, pixel.first.second - 1) - Ipp;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffIpp2 = Icc - image(coords.first - 1, coords.second - 1);
+
+                // Icp
+                const double diffIcp1 = image(pixel.first.first, pixel.first.second - 1) - Icp;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffIcp2 = Icc - image(coords.first, coords.second - 1);
+
+                // Inp
+                const double diffInp1 = image(pixel.first.first + 1, pixel.first.second - 1) - Inp;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffInp2 = Icc - image(coords.first + 1, coords.second - 1);
+
+                // Ipc
+                const double diffIpc1 = image(pixel.first.first - 1, pixel.first.second) - Ipc;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffIpc2 = Icc - image(coords.first - 1, coords.second);
+
+                // Inc
+                const double diffInc1 = image(pixel.first.first + 1, pixel.first.second) - Inc;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffInc2 = Icc - image(coords.first + 1, coords.second);
+
+                // Ipn
+                const double diffIpn1 = image(pixel.first.first - 1, pixel.first.second + 1) - Ipn;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffIpn2 = Icc - image(coords.first - 1, coords.second + 1);
+
+                // Icn
+                const double diffIcn1 = image(pixel.first.first, pixel.first.second + 1) - Icn;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffIcn2 = Icc - image(coords.first, coords.second + 1);
+
+                // Inn
+                const double diffInn1 = image(pixel.first.first + 1, pixel.first.second + 1) - Inn;
+                coords = mask[std::make_pair(x + 1 , y + 1)];
+                const double diffInn2 = Icc - image(coords.first + 1, coords.second + 1);
+
+                double neighborhoodDist = diffIpp1*diffIpp1 + diffIcp1*diffIcp1 + diffInp1*diffInp1
+                                        + diffIpc1*diffIpc1 + diffInc1*diffInc1
+                                        + diffIpn1*diffIpn1 + diffIcn1*diffIcn1 + diffInn1*diffInn1
+                                        + diffIpp2*diffIpp2 + diffIcp2*diffIcp2 + diffInp2*diffInp2
+                                        + diffIpc2*diffIpc2 + diffInc2*diffInc2
+                                        + diffIpn2*diffIpn2 + diffIcn2*diffIcn2 + diffInn2*diffInn2;
+
+                // If best neighorhood
+                if (neighborhoodDist < lowestDist)
+                {
+                    lowestDist = neighborhoodDist;
+                    pixel.second.first = x;
+                    pixel.second.second = y;
+                }
+            }
+
+            energy += lowestDist;
+
+            // Update image
+            image(pixel.first.first, pixel.first.second) = image(pixel.second.first, pixel.second.second);
+        }
+
+        // Iteration results
+        double ratio = (lastEnergy - energy) / double(lastEnergy);
+        ratio = ratio > 0 ? ratio : -ratio;
+
+        // Stats and verbose
+        if (verbose)
+        {
+            if (fileStats)
+            {
+                std::stringstream ss;
+                ss << "./loop" << i;
+                std::ofstream ofs(ss.str(), std::ios::trunc | std::ios::out);
+                ofs << "Last Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n\n";
+                ofs.close();
+            }
+
+            std::cout << "Loop : " << i << "\nLast Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n" << std::endl;
+        }
+
+    lastEnergy = energy;
+    }
 }
