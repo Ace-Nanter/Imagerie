@@ -29,11 +29,16 @@ message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 
 # Sources #-----------------------------------------------------------------------------------------
 set ( 	HEADERS
-	src/utils.h
+        src/abstractalgorithm.h
+        src/deterministicalgorithm.h
+        src/codebookalgorithm.h
+        src/random.h
     )
 
 set ( SOURCES
-	src/utils.cpp
+      src/abstractalgorithm.cpp
+      src/deterministicalgorithm.cpp
+      src/codebookalgorithm.cpp
     )
 
 include_directories (src/ lib/)
