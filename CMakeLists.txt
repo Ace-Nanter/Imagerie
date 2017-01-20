@@ -29,9 +29,11 @@ message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 
 # Sources #-----------------------------------------------------------------------------------------
 set ( 	HEADERS
+	src/utils.h
     )
 
 set ( SOURCES
+	src/utils.cpp
     )
 
 include_directories (src/ lib/)

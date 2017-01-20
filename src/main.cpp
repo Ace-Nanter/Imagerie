@@ -6,8 +6,10 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <math.h>
 
 #include "CImg.h"
+#include "utils.h"
 
 using namespace cimg_library;
 
@@ -91,7 +93,7 @@ int main(int argc, char** argv)
     getImage(mask, finalImage);
 
     // Algo
-    //probabilisticMethod(mask, outMask, finalImage);
+    probabilisticMethod(mask, outMask, finalImage);
 
     // Results
     if (saveResult)
@@ -117,8 +119,14 @@ void getMask(const CImg<>& input,
         // Blank pixels
         if (input(x, y/*, 0*/) == 255 /*&& input(x, y, 1) == 255 && input(x, y, 2) == 255*/)
             mask.insert({{x,y}, {x,y}});
-        else
-            outMask.push_back({x, y});
+		else
+		{
+			if (x != 0 && x != (input.width() - 1) && y != 0 && y != (input.height() - 1))
+			{
+				outMask.push_back({ x, y });
+			}
+		}
+            
     }
 }
 
@@ -161,81 +169,33 @@ void probabilisticMethod(std::map< std::pair< unsigned int, unsigned int > , std
     {
         double energy = 0;
 
-        for (auto& pixel : mask)
+        for (auto& pixelMask : mask)
         {
-            double lowestDist = std::numeric_limits<double>::max();
-            CImg_3x3(I, float);
+			double probaMax = 0.0;
 
-            unsigned int i = 0;
-            cimg_for3x3(image, x, y, 0, 0, I, float)
-            {
-                auto seedPixelCoord = std::pair<unsigned int, unsigned int>(x, y);
-                // Pixel is outside mask => skip it
-                if (outMask[i] != seedPixelCoord) continue; else ++i;
+			for (auto& pixelPicture : outMask) {
+				double probability = Utils::getNeighboorNonCausalDistance(image,
+					mask, pixelMask.first.first, pixelMask.first.second,
+					pixelPicture.first, pixelPicture.second, 3);
 
-                // Treatments
-                std::pair< unsigned int, unsigned int > coords;
+				// If better probability
+				if (probability > probaMax)
+				{
+					probaMax = probability;
+					pixelMask.second.first = pixelPicture.first;
+					pixelMask.second.second = pixelPicture.second;
+				}
+			}
 
-                // Ipp
-                const double diffIpp1 = image(pixel.first.first - 1, pixel.first.second - 1) - Ipp;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffIpp2 = Icc - image(coords.first - 1, coords.second - 1);
+			// Update the image
+			image(pixelMask.first.first, pixelMask.first.second)
+				= image(pixelMask.second.first, pixelMask.second.second);
 
-                // Icp
-                const double diffIcp1 = image(pixel.first.first, pixel.first.second - 1) - Icp;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffIcp2 = Icc - image(coords.first, coords.second - 1);
-
-                // Inp
-                const double diffInp1 = image(pixel.first.first + 1, pixel.first.second - 1) - Inp;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffInp2 = Icc - image(coords.first + 1, coords.second - 1);
-
-                // Ipc
-                const double diffIpc1 = image(pixel.first.first - 1, pixel.first.second) - Ipc;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffIpc2 = Icc - image(coords.first - 1, coords.second);
-
-                // Inc
-                const double diffInc1 = image(pixel.first.first + 1, pixel.first.second) - Inc;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffInc2 = Icc - image(coords.first + 1, coords.second);
-
-                // Ipn
-                const double diffIpn1 = image(pixel.first.first - 1, pixel.first.second + 1) - Ipn;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffIpn2 = Icc - image(coords.first - 1, coords.second + 1);
-
-                // Icn
-                const double diffIcn1 = image(pixel.first.first, pixel.first.second + 1) - Icn;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffIcn2 = Icc - image(coords.first, coords.second + 1);
-
-                // Inn
-                const double diffInn1 = image(pixel.first.first + 1, pixel.first.second + 1) - Inn;
-                coords = mask[std::make_pair(x + 1 , y + 1)];
-                const double diffInn2 = Icc - image(coords.first + 1, coords.second + 1);
-
-                double neighborhoodDist = diffIpp1*diffIpp1 + diffIcp1*diffIcp1 + diffInp1*diffInp1
-                                        + diffIpc1*diffIpc1 + diffInc1*diffInc1
-                                        + diffIpn1*diffIpn1 + diffIcn1*diffIcn1 + diffInn1*diffInn1
-                                        + diffIpp2*diffIpp2 + diffIcp2*diffIcp2 + diffInp2*diffInp2
-                                        + diffIpc2*diffIpc2 + diffInc2*diffInc2
-                                        + diffIpn2*diffIpn2 + diffIcn2*diffIcn2 + diffInn2*diffInn2;
-
-                // If best neighorhood
-                if (neighborhoodDist < lowestDist)
-                {
-                    lowestDist = neighborhoodDist;
-                    pixel.second.first = x;
-                    pixel.second.second = y;
-                }
-            }
-
-            energy += lowestDist;
+			// Get energy
+            energy += probaMax;
 
             // Update image
-            image(pixel.first.first, pixel.first.second) = image(pixel.second.first, pixel.second.second);
+            image(pixelMask.first.first, pixelMask.first.second) = image(pixelMask.second.first, pixelMask.second.second);
         }
 
         // Iteration results
