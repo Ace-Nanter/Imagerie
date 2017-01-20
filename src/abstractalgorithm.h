@@ -11,10 +11,11 @@ using namespace cimg_library;
 class AbstractAlgorithm
 {
 protected:
-    bool m_verbose; ///< Verbose mode.
+    bool m_verbose;     ///< Verbose mode.
+    bool m_fileStats;   ///< Flag that indicate if we generate a statistic file for each iteration.
     unsigned int m_nbIterations;    ///< Number of iterations to perform.
 
-    CImg<> m_image; ///< Image.
+    CImg<> m_image;     ///< Image.
 
 public:
     /**
@@ -22,8 +23,9 @@ public:
      * @param input Image that will be treated.
      * @param nbIteration Number of iterations to perform.
      * @param verbose Use verbose mode.
+     * @param produceStats Algorithm will produce file for statistics.
      */
-    AbstractAlgorithm(CImg<> input, unsigned int nbIteration = 5, bool verbose = false);
+    AbstractAlgorithm(CImg<> input, unsigned int nbIteration = 5, bool verbose = false, bool produceStats = false);
 
     /**
      * @brief Execute the implmented algorithm.
@@ -55,6 +57,24 @@ public:
     void setVerbose(bool verbose)
     {
         m_verbose = verbose;
+    }
+
+    /**
+     * @brief Check if the algorithm should produce statistics.
+     * @return True if activated, otherwise false.
+     */
+    bool produceStats() const
+    {
+        return m_fileStats;
+    }
+
+    /**
+     * @brief Set the system to produce statistic at each iteration.
+     * @param stats Statistic flag.
+     */
+    void setProduceStats(bool stats)
+    {
+        m_fileStats = stats;
     }
 
     /**
