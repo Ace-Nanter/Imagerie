@@ -29,9 +29,11 @@ message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 
 # Sources #-----------------------------------------------------------------------------------------
 set ( 	HEADERS
+        src/abstractalgorithm.h
     )
 
 set ( SOURCES
+      src/abstractalgorithm.cpp
     )
 
 include_directories (src/ lib/)

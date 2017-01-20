@@ -52,13 +52,14 @@ unsigned int nbIterations;
 /// MAIN ///
 int main(int argc, char** argv)
 {
-    verbose = cimg_option("-v", true, "Verbose mode");
+    verbose = cimg_option("-v", false, "Verbose mode");
     fileStats = cimg_option("-f", false, "Write stats to file");
     bool saveResult = cimg_option("-s", false, "Save result to file");
-    const char* outputFile = cimg_option("-sf", "output.bmp", "Output file name");
+    const char* inputFile = cimg_option("-if", "images/lenaGrayHiddenSmall.bmp", "Input file name");
+    const char* outputFile = cimg_option("-of", "output.bmp", "Output file name");
     nbIterations = cimg_option("-n", 5, "Number of iterations");
 
-    CImg<float> input = CImg<float>("images/lenaGrayHiddenSmall.bmp").channel(0);
+    CImg<float> input = CImg<float>(inputFile).channel(0);
     CImgDisplay displayInput(input, "Input Image");
 
     // Pixels that need treatment
@@ -119,8 +120,6 @@ void randomInitMask(const std::vector< std::pair< unsigned int, unsigned int > >
 
         // Initialize the color of the pixel to a random pixel color in the seed image
         input(pixel.first, pixel.second/*, 0*/) = input(seedPixel.first, seedPixel.second/*, 0*/);
-        /*input(pixel.first, pixel.second, 1) = input(seedPixel.first, seedPixel.second, 1);
-        input(pixel.first, pixel.second, 2) = input(seedPixel.first, seedPixel.second, 2);*/
     }
 }
 
