@@ -171,17 +171,17 @@ void probabilisticMethod(std::map< std::pair< unsigned int, unsigned int > , std
 
         for (auto& pixelMask : mask)
         {
-			double probaMax = 0.0;
+			double distanceMin = std::numeric_limits<double>::max();
 
 			for (auto& pixelPicture : outMask) {
-				double probability = Utils::getNeighboorNonCausalDistance(image,
+				double distance = Utils::getNeighboorNonCausalDistance(image,
 					mask, pixelMask.first.first, pixelMask.first.second,
 					pixelPicture.first, pixelPicture.second, 3);
 
 				// If better probability
-				if (probability > probaMax)
+				if (distance < distanceMin)
 				{
-					probaMax = probability;
+					distanceMin = distance;
 					pixelMask.second.first = pixelPicture.first;
 					pixelMask.second.second = pixelPicture.second;
 				}
@@ -192,7 +192,7 @@ void probabilisticMethod(std::map< std::pair< unsigned int, unsigned int > , std
 				= image(pixelMask.second.first, pixelMask.second.second);
 
 			// Get energy
-            energy += probaMax;
+            energy += distanceMin;
 
             // Update image
             image(pixelMask.first.first, pixelMask.first.second) = image(pixelMask.second.first, pixelMask.second.second);

@@ -8,8 +8,8 @@ void Utils::getNeighboors(const CImg<> & image,
 	unsigned int y,
 	unsigned int size)
 {
-	for (int i = 0; i < size; i++) {
-		for (unsigned int j = 0; j < size; j++)
+	for (int i = 0; i < size; ++i) {
+		for (unsigned int j = 0; j < size; ++j)
 		{
 			const double xCoord = x - (size / 2) + i;
 			const double yCoord = y - (size / 2) + j;
@@ -22,13 +22,6 @@ void Utils::getNeighboors(const CImg<> & image,
 			else {
 				(*neighboorhood)(i, j) = image(xCoord, yCoord);
 			}
-		}
-	}
-
-	for (int k = 0; k < 3; k++) {
-		for (int l = 0; l < 3; l++) {
-			double yolo = (*neighboorhood)(k, l);
-			std::cout << yolo << std::endl;
 		}
 	}
 }
@@ -86,13 +79,6 @@ double Utils::getNeighboorNonCausalDistance(const CImg<> & image,
 			const double yCoord = yB - (size / 2) + j;
 
 			// First distance
-			for (int k = 0; k < 3; k++) {
-				for (int l = 0; l < 3; l++) {
-					double yolo = neighboorhoodA(k, l);
-					std::cout << yolo << std::endl;
-				}
-			}
-
 			const double diff1 = neighboorhoodA(i, j) - image(xCoord, yCoord);
 			distance += (diff1 * diff1);
 			
@@ -125,7 +111,5 @@ double Utils::getNeighboorNonCausalDistance(const CImg<> & image,
 		}
 	}
 
-	finalResult = exp(0-distance);			// TODO : problem here
-
-	return finalResult;
+	return distance;
 }
