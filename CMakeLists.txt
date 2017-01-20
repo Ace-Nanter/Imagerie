@@ -30,6 +30,7 @@ message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 # Sources #-----------------------------------------------------------------------------------------
 set ( 	HEADERS
         src/abstractalgorithm.h
+        src/random.h
     )
 
 set ( SOURCES

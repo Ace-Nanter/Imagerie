@@ -2,15 +2,14 @@
 
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <sstream>
 #include <vector>
 
 #include "CImg.h"
 
-using namespace cimg_library;
+#include "random.h"
 
-std::mt19937 mt(123456789); ///< Random generator.
+using namespace cimg_library;
 
 /**
  * @brief Recover all pixels coordinates that need reconstruction.
