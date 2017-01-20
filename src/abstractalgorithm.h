@@ -28,6 +28,11 @@ public:
     AbstractAlgorithm(CImg<> input, unsigned int nbIteration = 5, bool verbose = false, bool produceStats = false);
 
     /**
+     * @brief Destructor.
+     */
+    virtual ~AbstractAlgorithm() = default;
+
+    /**
      * @brief Execute the implmented algorithm.
      */
     virtual void exec() =0;
