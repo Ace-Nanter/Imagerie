@@ -32,7 +32,7 @@ set ( 	HEADERS
         src/abstractalgorithm.h
         src/deterministicalgorithm.h
         src/codebookalgorithm.h
-		src/probabilisticalgorithm.h
+        src/probabilisticalgorithm.h
         src/random.h
     )
 
@@ -40,7 +40,7 @@ set ( SOURCES
       src/abstractalgorithm.cpp
       src/deterministicalgorithm.cpp
       src/codebookalgorithm.cpp
-	  src/probabilisticalgorithm.cpp
+      src/probabilisticalgorithm.cpp
     )
 
 include_directories (src/ lib/)

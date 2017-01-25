@@ -6,59 +6,162 @@
 
 #include "random.h"
 
-ProbabilisticAlgorithm::ProbabilisticAlgorithm(CImg<> input, unsigned int neighborhoodSize, unsigned int nbIteration, bool verbose, bool produceStats)
-	: AbstractAlgorithm(input, nbIteration, verbose, produceStats)
-	, m_neighborhoodSize(neighborhoodSize)
+ProbabilisticAlgorithm::ProbabilisticAlgorithm(CImg<> input, unsigned int nbIteration, bool verbose, bool produceStats)
+    : AbstractAlgorithm(input, nbIteration, verbose, produceStats)
 {
-	computeMask();
-	randomInitMask();
+    computeMask();
+    randomInitMask();
 }
 
 void ProbabilisticAlgorithm::computeMask()
 {
-	// Add every pixels in the image that should be reconstructed
-	cimg_forXY(m_image, x, y)
-	{
-		// Blank pixels
-		if (m_image(x, y/*, 0*/) == 255 /*&& input(x, y, 1) == 255 && input(x, y, 2) == 255*/)
-		{
-			// Get all neighbors pixel in a range of size neighborhoodSize
-			Point pixel = { x, y };
-			PointSet neighbors;
+    // Add every pixels in the image that should be reconstructed
+    cimg_forXY(m_image, x, y)
+    {
+        // Blank pixels
+        if (m_image(x, y/*, 0*/) == 255 /*&& input(x, y, 1) == 255 && input(x, y, 2) == 255*/)
+        {
+            // Get all neighbors pixel in a range of size neighborhoodSize
+            Point pixel = { x, y };
+            PointSet neighbors;
 
-			// Security margin of one (for safe neighborhood loops)
-			const unsigned int beginX = std::max(unsigned(0), x - m_neighborhoodSize);
-			const unsigned int endX = std::min(x + m_neighborhoodSize, unsigned(m_image.width() - 1));
+            m_mappingMask.insert({ pixel, pixel});
+        }
+        else {
+            if (x > 0 && y > 0 && x < m_image.width() - 1 && y < m_image.height() -1) {
+                m_outMask.push_back({ x, y });
+            }
+        }
+    }
 
-			const unsigned int beginY = std::max(unsigned(0), y - m_neighborhoodSize);
-			const unsigned int endY = std::min(y + m_neighborhoodSize, unsigned(m_image.height() - 1));
-
-			for (unsigned int i = beginX; i < endX && i != unsigned(x); ++i)
-			{
-				for (unsigned int j = beginY; j < endY && j != unsigned(y); ++j)
-				{
-					neighbors.push_back({ i, j });
-				}
-			}
-
-			m_mask.insert({ pixel, neighbors });
-		}
-		else
-			m_outMask.push_back({ x, y });
-	}
+    std::cout << "Taille masque : " << m_mappingMask.size() << std::endl;
 }
 
-void CodebookAlgorithm::randomInitMask()
+void ProbabilisticAlgorithm::randomInitMask()
 {
-	const unsigned int nbPixels = m_outMask.size();
+    const unsigned int nbPixels = m_outMask.size();
 
-	// For each pixel of the mask
-	for (const auto& pixelAssoc : m_mask)
-	{
-		unsigned int index = mt() % (nbPixels);
-		const auto& seedPixel = m_outMask[index];
+    // For each pixel of the mask
+    for (auto& pixelAssoc : m_mappingMask)
+    {
+        unsigned int index = mt() % (nbPixels);
+        const auto& seedPixel = m_outMask[index];
 
-		// Initialize the color of the pixel to a random pixel color in the seed image
-		m_image(pixelAssoc.first.first, pixelAssoc.first.second/*, 0*/) = m_image(seedPixel.first, seedPixel.second/*, 0*/);
-	}
+        // Initialize the color of the pixel to a random pixel color in the seed image
+        pixelAssoc.second = seedPixel;
+        m_image(pixelAssoc.first.first, pixelAssoc.first.second) = m_image(seedPixel.first, seedPixel.second/*, 0*/);
+    }
+}
+
+void ProbabilisticAlgorithm::exec() {
+
+    double lastEnergy = std::numeric_limits<double>::max();
+
+    for (unsigned int i = 0 ; i < m_nbIterations ; ++i)
+    {
+        double energy = 0;
+
+        // For every pixel in the mask
+        for (const auto& pixelAssoc : m_mappingMask)
+        {
+            std::pair<unsigned int, unsigned int> bestMatch(0, 0);
+            double lowestDist = std::numeric_limits<double>::max();
+
+            const auto& pixel = pixelAssoc.first;
+
+            // For every pixel in the picture
+            for (const auto& pixelSeed : m_outMask)
+            {
+                // Treatments
+
+                // First distance
+                const double diffIpp1 = m_image(pixel.first - 1, pixel.second - 1) - m_image(pixelSeed.first - 1, pixelSeed.second - 1);
+                const double diffIcp1 = m_image(pixel.first    , pixel.second - 1) - m_image(pixelSeed.first    , pixelSeed.second - 1);
+                const double diffInp1 = m_image(pixel.first + 1, pixel.second - 1) - m_image(pixelSeed.first + 1, pixelSeed.second - 1);
+
+                const double diffIpc1 = m_image(pixelSeed.first - 1, pixelSeed.second) - m_image(pixelSeed.first - 1, pixelSeed.second);
+                const double diffInc1 = m_image(pixelSeed.first + 1, pixelSeed.second) - m_image(pixelSeed.first + 1, pixelSeed.second);
+
+                const double diffIpn1 = m_image(pixel.first - 1, pixel.second + 1) - m_image(pixelSeed.first - 1, pixelSeed.second + 1);
+                const double diffIcn1 = m_image(pixel.first    , pixel.second + 1) - m_image(pixelSeed.first    , pixelSeed.second + 1);
+                const double diffInn1 = m_image(pixel.first + 1, pixel.second + 1) - m_image(pixelSeed.first + 1, pixelSeed.second + 1);
+
+                double distance = diffIpp1 *diffIpp1 + diffIcp1 * diffIcp1 + diffInp1 * diffInp1
+                                        + diffIpc1 * diffIpc1 /*+ diffIcc*diffIcc*/ + diffInc1 * diffInc1
+                                        + diffIpn1 * diffIpn1 + diffIcn1 * diffIcn1 + diffInn1* diffInn1;
+
+                // Second distance
+                const float pointValue = m_image(pixelSeed.first, pixelSeed.second);
+
+                const double diffIpp2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first - 1, pixel.second -1);
+                const double diffIcp2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first, pixel.second - 1);
+                const double diffInp2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first + 1, pixel.second - 1);
+
+                const double diffIpc2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first - 1, pixel.second);
+                const double diffInc2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first + 1, pixel.second);
+
+                const double diffIpn2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first - 1, pixel.second + 1);
+                const double diffIcn2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first, pixel.second + 1);
+                const double diffInn2 = distanceNonCausal(pointValue, pixel.first, pixel.second, pixel.first + 1, pixel.second + 1);
+
+                distance += diffIpp2 *diffIpp2 + diffIcp2 * diffIcp2 + diffInp2 * diffInp2
+                        + diffIpc2 * diffIpc2 /*+ diffIcc*diffIcc*/ + diffInc2 * diffInc2
+                        + diffIpn2 * diffIpn2 + diffIcn2 * diffIcn2 + diffInn2* diffInn2;
+
+
+                // If best probability
+                if (distance < lowestDist)
+                {
+                    lowestDist = distance;
+                    bestMatch = { pixel.first, pixel.second };
+                }
+            }
+
+            std::cout << "Pixel traité" << std::endl;
+
+            energy += lowestDist;
+
+            // Set new pixel color
+            m_image(pixel.first, pixel.second) = m_image(bestMatch.first, bestMatch.second);
+        }
+
+        // Iteration results
+        double ratio = (lastEnergy - energy) / double(lastEnergy);
+        ratio = ratio > 0 ? ratio : -ratio;
+
+        // Stats and verbose
+        if (m_verbose)
+        {
+            if (m_fileStats)
+            {
+                std::stringstream ss;
+                ss << "./loop" << i;
+                std::ofstream ofs(ss.str(), std::ios::trunc | std::ios::out);
+                ofs << "Last Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n\n";
+                ofs.close();
+            }
+
+            std::cout << "Loop : " << i << "\nLast Energy : " << lastEnergy << "\nEnergy : " << energy << "\nRatio : " << ratio << "\n" << std::endl;
+        }
+
+        lastEnergy = energy;
+    }
+}
+
+double ProbabilisticAlgorithm::distanceNonCausal(float value, int xA, int yA, int xB, int yB) {
+
+    double distance = 0;
+
+    auto p = m_mappingMask.find({ xB, yB});
+    if(p != m_mappingMask.end()) {
+        p->second.first = xA + (xA - xB);
+        p->second.second = yA + (yA -yB);
+
+        distance = value - m_image(p->second.first, p->second.second);
+    }
+    else {		// No association found, the ponderation is null
+        distance = 0;
+    }
+
+    return distance;
 }

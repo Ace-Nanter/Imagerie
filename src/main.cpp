@@ -4,7 +4,7 @@
 
 #include "CImg.h"
 
-#include "codebookalgorithm.h"
+#include "probabilisticalgorithm.h"
 
 using namespace cimg_library;
 
@@ -17,14 +17,14 @@ int main(int argc, char** argv)
     const char* inputFile = cimg_option("-if", "images/lenaGrayHiddenSmall.bmp", "Input file name");
     const char* outputFile = cimg_option("-of", "output.bmp", "Output file name");
     unsigned int nbIterations = cimg_option("-n", 5, "Number of iterations");
-    unsigned int neighborhoodSize = cimg_option("-ns", 20, "For Codebook optimization define the neighborhood size to consider");
+    unsigned int neighborhoodSize = cimg_option("-ns", 3, "For Codebook optimization define the neighborhood size to consider");
 
     CImg<float> input = CImg<float>(inputFile).channel(0);
     CImgDisplay displayInput(input, "Input Image");
 
     // Create algorithm
-    AbstractAlgorithm* algo = new CodebookAlgorithm(input, neighborhoodSize, nbIterations, verbose, fileStats);
-	
+    AbstractAlgorithm* algo = new ProbabilisticAlgorithm(input, nbIterations, verbose, fileStats);
+
     // Algo
     algo->exec();
 
