@@ -31,7 +31,8 @@ message ( STATUS "Compiler flags: ${CMAKE_CXX_FLAGS}" )
 set ( 	HEADERS
         src/abstractalgorithm.h
         src/deterministicalgorithm.h
-        src/codebookalgorithm.h
+        src/codebookprobabilistic.h
+        src/codebookdeterministic.h
         src/probabilisticalgorithm.h
         src/random.h
     )
@@ -39,7 +40,8 @@ set ( 	HEADERS
 set ( SOURCES
       src/abstractalgorithm.cpp
       src/deterministicalgorithm.cpp
-      src/codebookalgorithm.cpp
+      src/codebookprobabilistic.cpp
+      src/codebookdeterministic.cpp
       src/probabilisticalgorithm.cpp
     )
 

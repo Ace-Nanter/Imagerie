@@ -21,7 +21,7 @@ public:
 
 private:
     MapMask m_mappingMask;			///< Association of the pixel which are in the mask with the replacing pixels.
-    MaskSet m_neighboorhoodMap;		///< Pixel that are in the mask with their neighboorhood.
+    //MaskSet m_neighboorhoodMap;		///< Pixel that are in the mask with their neighboorhood.
     PointSet m_outMask;				///< Pixel that are out the mask.
 
     /**

@@ -79,8 +79,8 @@ void ProbabilisticAlgorithm::exec() {
 				const double diffIcp1 = m_image(pixel.first, pixel.second - 1) - m_image(pixelSeed.first, pixelSeed.second - 1);
 				const double diffInp1 = m_image(pixel.first + 1, pixel.second - 1) - m_image(pixelSeed.first + 1, pixelSeed.second - 1);
 
-				const double diffIpc1 = m_image(pixelSeed.first - 1, pixelSeed.second) - m_image(pixelSeed.first - 1, pixelSeed.second);
-				const double diffInc1 = m_image(pixelSeed.first + 1, pixelSeed.second) - m_image(pixelSeed.first + 1, pixelSeed.second);
+                const double diffIpc1 = m_image(pixel.first - 1, pixel.second) - m_image(pixelSeed.first - 1, pixelSeed.second);
+                const double diffInc1 = m_image(pixel.first + 1, pixel.second) - m_image(pixelSeed.first + 1, pixelSeed.second);
 
 				const double diffIpn1 = m_image(pixel.first - 1, pixel.second + 1) - m_image(pixelSeed.first - 1, pixelSeed.second + 1);
 				const double diffIcn1 = m_image(pixel.first, pixel.second + 1) - m_image(pixelSeed.first, pixelSeed.second + 1);
