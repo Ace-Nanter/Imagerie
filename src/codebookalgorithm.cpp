@@ -27,10 +27,10 @@ void CodebookAlgorithm::computeMask()
             PointSet neighbors;
 
             // Security margin of one (for safe neighborhood loops)
-            const unsigned int beginX = std::max(unsigned(0), x - m_neighborhoodSize);
+            const unsigned int beginX = std::max(unsigned(1), x - m_neighborhoodSize);
             const unsigned int endX = std::min(x + m_neighborhoodSize, unsigned(m_image.width() - 1));
 
-            const unsigned int beginY = std::max(unsigned(0), y - m_neighborhoodSize);
+            const unsigned int beginY = std::max(unsigned(1), y - m_neighborhoodSize);
             const unsigned int endY = std::min(y + m_neighborhoodSize, unsigned(m_image.height() - 1));
 
             for (unsigned int i = beginX ; i < endX && i != unsigned(x) ; ++i)
