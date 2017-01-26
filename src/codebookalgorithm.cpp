@@ -6,8 +6,15 @@
 
 #include "random.h"
 
-CodebookAlgorithm::CodebookAlgorithm(CImg<> input, unsigned int neighborhoodSize, unsigned int nbIteration, bool verbose, bool produceStats)
-    : AbstractAlgorithm(input, nbIteration, verbose, produceStats)
+CodebookAlgorithm::CodebookAlgorithm(CImg<> input,
+                                     unsigned int neighborhoodSize,
+                                     unsigned int nbIteration,
+                                     bool prematureStop,
+                                     unsigned int windowSize,
+                                     double gapPercentag,
+                                     bool verbose,
+                                     bool produceStats)
+    : AbstractAlgorithm(input, nbIteration, prematureStop, windowSize, gapPercentag, verbose, produceStats)
     , m_neighborhoodSize(neighborhoodSize)
 {
     computeMask();
@@ -67,7 +74,9 @@ void CodebookAlgorithm::exec()
 {
     double lastEnergy = std::numeric_limits<double>::max();
 
-    for (unsigned int i = 0 ; i < m_nbIterations ; ++i)
+    bool end = false;
+    unsigned int i = 0;
+    while (!end && i < m_nbIterations)
     {
         double energy = 0;
 
@@ -132,5 +141,17 @@ void CodebookAlgorithm::exec()
         }
 
         lastEnergy = energy;
+
+        if (m_enablePrematureStop && computePrematureStop(energy))
+        {
+            if (m_verbose)
+            {
+                std::cout << "Algorithm prematuraly stopped at iteration: " << i << std::endl;
+            }
+
+            end = true;
+        }
+
+        ++i;
     }
 }

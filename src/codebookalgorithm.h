@@ -43,7 +43,14 @@ public:
      * @param verbose Use verbose mode.
      * @param produceStats Algorithm will produce file for statistics.
      */
-    CodebookAlgorithm(CImg<> input, unsigned int neighborhoodSize, unsigned int nbIteration = 5, bool verbose = false, bool produceStats = false);
+    CodebookAlgorithm(CImg<> input,
+                      unsigned int neighborhoodSize,
+                      unsigned int nbIteration = 5,
+                      bool prematureStop = true,
+                      unsigned int windowSize = 10,
+                      double gapPercentage = 0.01,
+                      bool verbose = false,
+                      bool produceStats = false);
 
     /**
      * @brief Use the deterministic method with codebook optimization to emplace mask pixels.

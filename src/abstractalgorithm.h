@@ -1,6 +1,8 @@
 #ifndef ABSTRACTALGORITHM_H
 #define ABSTRACTALGORITHM_H
 
+#include <deque>
+
 #include "CImg.h"
 
 using namespace cimg_library;
@@ -15,17 +17,39 @@ protected:
     bool m_fileStats;   ///< Flag that indicate if we generate a statistic file for each iteration.
     unsigned int m_nbIterations;    ///< Number of iterations to perform.
 
+    bool m_enablePrematureStop;     ///< Flag that use a movable windows of last energies to stop the algorithm prematuraly.
+    unsigned int m_movableWindowSize;   ///< Number of energy considered when using premature stop.
+    double m_gapPercentage;         ///< Gap percentage between last energy computed and median that is used to premautraly stop the algorithm.
+    double m_lastMedian;            ///< Last iteration median.
+    std::deque<double> m_lastEnergies;  ///< Store nbStoredEnergies elements corresponding to last iterations energies.
+
     CImg<> m_image;     ///< Image.
+
+    /**
+     * @brief Check if the algorithm should end prematuraly.
+     * @param energy Last energy computed.
+     * @return True if algorithm should stop.
+     */
+    bool computePrematureStop(double energy);
 
 public:
     /**
      * @brief Constructor
      * @param input Image that will be treated.
      * @param nbIteration Number of iterations to perform.
+     * @param prematureStop Flag for premature stop.
+     * @param windowsSize Window size.
+     * @param gapPercentage Gap percentage to use.
      * @param verbose Use verbose mode.
      * @param produceStats Algorithm will produce file for statistics.
      */
-    AbstractAlgorithm(CImg<> input, unsigned int nbIteration = 5, bool verbose = false, bool produceStats = false);
+    AbstractAlgorithm(CImg<> input,
+                      unsigned int nbIteration = 5,
+                      bool prematureStop = true,
+                      unsigned int windowSize = 10,
+                      double gapPercentage = 0.01,
+                      bool verbose = false,
+                      bool produceStats = false);
 
     /**
      * @brief Destructor.
@@ -98,6 +122,43 @@ public:
     void setNbIterations(unsigned int nbIterations)
     {
         m_nbIterations = nbIterations;
+    }
+
+    /**
+     * @brief Check if we use premature stop mechanism.
+     * @return True if activated, otherwise false.
+     */
+    bool usePrematureStop() const
+    {
+        return m_enablePrematureStop;
+    }
+
+    /**
+     * @brief Set the premature stop state.
+     * @param state Premature stop flag.
+     */
+    void setUsePrematureStop(bool state)
+    {
+        m_enablePrematureStop = state;
+    }
+
+
+    /**
+     * @brief Get the gap percentage.
+     * @return Gap percentage.
+     */
+    unsigned int getGapPercentage() const
+    {
+        return m_gapPercentage;
+    }
+
+    /**
+     * @brief Set the gap percentage.
+     * @param gap Gap percentage.
+     */
+    void setGapPercentage(unsigned int gap)
+    {
+        m_gapPercentage = gap;
     }
 };
 
