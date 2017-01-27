@@ -1,4 +1,4 @@
-#include "codebookalgorithm.h"
+#include "codebookdeterministic.h"
 
 #include <fstream>
 #include <iostream>
@@ -6,7 +6,7 @@
 
 #include "random.h"
 
-CodebookAlgorithm::CodebookAlgorithm(CImg<> input,
+CodebookDeterministic::CodebookDeterministic(CImg<> input,
                                      unsigned int neighborhoodSize,
                                      unsigned int nbIteration,
                                      bool prematureStop,
@@ -21,7 +21,7 @@ CodebookAlgorithm::CodebookAlgorithm(CImg<> input,
     randomInitMask();
 }
 
-void CodebookAlgorithm::computeMask()
+void CodebookDeterministic::computeMask()
 {
     // Add every pixels in the image that should be reconstructed
     cimg_forXY(m_image, x, y)
@@ -55,7 +55,7 @@ void CodebookAlgorithm::computeMask()
     }
 }
 
-void CodebookAlgorithm::randomInitMask()
+void CodebookDeterministic::randomInitMask()
 {
     const unsigned int nbPixels = m_outMask.size();
 
@@ -70,7 +70,7 @@ void CodebookAlgorithm::randomInitMask()
     }
 }
 
-void CodebookAlgorithm::exec()
+void CodebookDeterministic::exec()
 {
     double lastEnergy = std::numeric_limits<double>::max();
 

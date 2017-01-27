@@ -1,5 +1,5 @@
-#ifndef CODEBOOKALGORITHM_H
-#define CODEBOOKALGORITHM_H
+#ifndef CODEBOOKDETERMINISTIC_H
+#define CODEBOOKDETERMINISTIC_H
 
 #include "abstractalgorithm.h"
 
@@ -7,9 +7,9 @@
 #include <vector>
 
 /**
- * @brief The CodebookAlgorithm class Implements the deterministic method using codebook optimization.
+ * @brief The CodebookDeterministic class Implements the deterministic method using codebook optimization.
  */
-class CodebookAlgorithm
+class CodebookDeterministic
         : public AbstractAlgorithm
 {
 public:
@@ -46,7 +46,7 @@ public:
      * @param verbose Use verbose mode.
      * @param produceStats Algorithm will produce file for statistics.
      */
-    CodebookAlgorithm(CImg<> input,
+    CodebookDeterministic(CImg<> input,
                       unsigned int neighborhoodSize,
                       unsigned int nbIteration = 5,
                       bool prematureStop = true,
@@ -70,4 +70,4 @@ public:
     }
 };
 
-#endif // CODEBOOKALGORITHM_H
+#endif // CODEBOOKDETERMINISTIC_H

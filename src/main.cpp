@@ -5,7 +5,9 @@
 #include "CImg.h"
 
 #include "deterministicalgorithm.h"
-#include "codebookalgorithm.h"
+#include "probabilisticalgorithm.h"
+#include "codebookdeterministic.h"
+#include "codebookprobabilistic.h"
 
 using namespace cimg_library;
 
@@ -16,6 +18,17 @@ using namespace cimg_library;
  * @return Image showing the difference.
  */
 CImg<> compare(const CImg<>& origin, const CImg<>& result);
+
+/**
+ * @brief The Method enum Enumerate all possible algorithms.
+ */
+enum Method
+{
+    DETERMINISTIC = 1,
+    DETERMINISTIC_CODEBOOK = 2,
+    PROBABILISTIC = 3,
+    PROBABILISTIC_CODEBOOK = 4,
+};
 
 /// MAIN ///
 int main(int argc, char** argv)
@@ -32,13 +45,36 @@ int main(int argc, char** argv)
     const char* outputCompareFile = cimg_option("-ocf", "outputCompare.bmp", "Output comparison image file name");
     const unsigned int nbIterations = cimg_option("-n", 5, "Number of iterations");
     const unsigned int neighborhoodSize = cimg_option("-ns", 20, "For Codebook optimization define the neighborhood size to consider");
+    const int method = cimg_option("-a", Method::DETERMINISTIC_CODEBOOK, "Algorithm to use: \n\
+                                                                          1 = Deterministic Method \n\
+                                                                          2 = Codebook Optimization (Deterministic Method)\n\
+                                                                          3 = Probabilistic Method \n\
+                                                                          4 = Codebook Optimization (Probabilistic Method)");
 
     const CImg<float> origin = CImg<float>(originalFile).channel(0);
     const CImg<float> input = CImg<float>(inputFile).channel(0);
     CImgDisplay displayInput(input, "Input Image");
 
     // Create algorithm
-    AbstractAlgorithm* algo = new DeterministicAlgorithm(input, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+    AbstractAlgorithm* algo = nullptr;
+    switch (method)
+    {
+    case Method::DETERMINISTIC:
+        algo = new DeterministicAlgorithm(input, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+        break;
+    case Method::DETERMINISTIC_CODEBOOK:
+        algo = new CodebookDeterministic(input, neighborhoodSize, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+        break;
+    case Method::PROBABILISTIC:
+        algo = new ProbabilisticAlgorithm(input, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+        break;
+    case Method::PROBABILISTIC_CODEBOOK:
+        algo = new CodebookProbabilistic(input, neighborhoodSize, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+        break;
+    default:
+        algo = new CodebookDeterministic(input, neighborhoodSize, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+        break;
+    }
 	
     // Algo
     algo->exec();
