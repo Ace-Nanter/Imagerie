@@ -40,6 +40,9 @@ public:
      * @param input Image that will be treated.
      * @param neighborhoodSize Size of ther neighborhood to consider around mask pixels.
      * @param nbIteration Number of iterations to perform.
+     * @param prematureStop Flag for premature stop.
+     * @param windowsSize Window size.
+     * @param gapPercentage Gap percentage to use.
      * @param verbose Use verbose mode.
      * @param produceStats Algorithm will produce file for statistics.
      */

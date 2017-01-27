@@ -4,6 +4,7 @@
 
 #include "CImg.h"
 
+#include "deterministicalgorithm.h"
 #include "codebookalgorithm.h"
 
 using namespace cimg_library;
@@ -37,7 +38,7 @@ int main(int argc, char** argv)
     CImgDisplay displayInput(input, "Input Image");
 
     // Create algorithm
-    AbstractAlgorithm* algo = new CodebookAlgorithm(input, neighborhoodSize, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
+    AbstractAlgorithm* algo = new DeterministicAlgorithm(input, nbIterations, prematureStop, windowSize, gap, verbose, fileStats);
 	
     // Algo
     algo->exec();

@@ -36,10 +36,19 @@ public:
      * @brief Constructor
      * @param input Image that will be treated.
      * @param nbIteration Number of iterations to perform.
+     * @param prematureStop Flag for premature stop.
+     * @param windowsSize Window size.
+     * @param gapPercentage Gap percentage to use.
      * @param verbose Use verbose mode.
      * @param produceStats Algorithm will produce file for statistics.
      */
-    DeterministicAlgorithm(CImg<> input, unsigned int nbIteration = 5, bool verbose = false, bool produceStats = false);
+    DeterministicAlgorithm(CImg<> input,
+                           unsigned int nbIteration = 5,
+                           bool prematureStop = true,
+                           unsigned int windowSize = 10,
+                           double gapPercentage = 0.01,
+                           bool verbose = false,
+                           bool produceStats = false);
 
     /**
      * @brief Use the deterministic method to emplace mask pixels.

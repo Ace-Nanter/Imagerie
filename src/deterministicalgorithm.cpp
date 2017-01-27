@@ -6,8 +6,14 @@
 
 #include "random.h"
 
-DeterministicAlgorithm::DeterministicAlgorithm(CImg<> input, unsigned int nbIteration, bool verbose, bool produceStats)
-    : AbstractAlgorithm(input, nbIteration, verbose, produceStats)
+DeterministicAlgorithm::DeterministicAlgorithm(CImg<> input,
+                                               unsigned int nbIteration,
+                                               bool prematureStop,
+                                               unsigned int windowSize,
+                                               double gapPercentage,
+                                               bool verbose,
+                                               bool produceStats)
+    : AbstractAlgorithm(input, nbIteration, prematureStop, windowSize, gapPercentage, verbose, produceStats)
 {
     computeMask();
     randomInitMask();
@@ -45,7 +51,9 @@ void DeterministicAlgorithm::exec()
 {
     double lastEnergy = std::numeric_limits<double>::max();
 
-    for (unsigned int i = 0 ; i < m_nbIterations ; ++i)
+    bool end = false;
+    unsigned int i = 0;
+    while (!end && i < m_nbIterations)
     {
         double energy = 0;
 
@@ -113,5 +121,17 @@ void DeterministicAlgorithm::exec()
         }
 
         lastEnergy = energy;
+
+        if (m_enablePrematureStop && computePrematureStop(energy))
+        {
+            if (m_verbose)
+            {
+                std::cout << "Algorithm prematuraly stopped at iteration: " << i << std::endl;
+            }
+
+            end = true;
+        }
+
+        ++i;
     }
 }
